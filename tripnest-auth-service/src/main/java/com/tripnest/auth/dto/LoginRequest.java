@@ -5,11 +5,11 @@ import jakarta.validation.constraints.Size;
 
 public record LoginRequest(
 
-        @NotBlank
+        @NotBlank(message = "Username or email is required")
         @Size(max = 100)
         String username,
 
-        @NotBlank
+        @NotBlank(message = "Password is required")
         @Size(max = 72)
         String password
 ) {

@@ -14,14 +14,15 @@ import java.time.Instant;
 @Service
 public class JwtService {
 
-    private static final String ISSUER = "tripnest-auth-service";
+    public static final String ISSUER = "tripnest-auth-service";
 
     private final JwtEncoder jwtEncoder;
     private final long expirationSeconds;
 
     public JwtService(
             JwtEncoder jwtEncoder,
-            @Value("${app.jwt.expiration-seconds}") long expirationSeconds) {
+            @Value("${app.jwt.expiration-seconds}")
+            long expirationSeconds) {
         this.jwtEncoder = jwtEncoder;
         this.expirationSeconds = expirationSeconds;
     }
@@ -52,4 +53,5 @@ public class JwtService {
     public long getExpirationSeconds() {
         return expirationSeconds;
     }
+
 }

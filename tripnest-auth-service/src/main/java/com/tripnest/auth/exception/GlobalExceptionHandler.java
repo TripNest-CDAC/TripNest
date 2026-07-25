@@ -67,7 +67,7 @@ public class GlobalExceptionHandler {
 
         return buildResponse(
                 HttpStatus.UNAUTHORIZED,
-                "Invalid username or password",
+                "Invalid username/email or password",
                 request,
                 Map.of()
         );
@@ -93,6 +93,32 @@ public class GlobalExceptionHandler {
 
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request,
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ApiError> handleDuplicateResource(
+            DuplicateResourceException exception,
+            HttpServletRequest request) {
+
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request,
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiError> handleResourceNotFound(
+            ResourceNotFoundException exception,
+            HttpServletRequest request) {
+
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
                 exception.getMessage(),
                 request,
                 Map.of()

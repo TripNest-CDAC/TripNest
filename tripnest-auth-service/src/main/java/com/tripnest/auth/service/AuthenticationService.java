@@ -1,6 +1,7 @@
 package com.tripnest.auth.service;
 
 import com.tripnest.auth.dto.AuthResponse;
+import com.tripnest.auth.dto.CurrentUserResponse;
 import com.tripnest.auth.dto.LoginRequest;
 import com.tripnest.auth.dto.RegisterRequest;
 import com.tripnest.auth.dto.RegisterResponse;
@@ -10,6 +11,7 @@ import com.tripnest.auth.entity.Role;
 import com.tripnest.auth.entity.RoleName;
 import com.tripnest.auth.entity.UserAccount;
 import com.tripnest.auth.entity.UserStatus;
+import com.tripnest.auth.exception.DuplicateResourceException;
 import com.tripnest.auth.repository.CompanyRepository;
 import com.tripnest.auth.repository.RoleRepository;
 import com.tripnest.auth.repository.UserAccountRepository;
@@ -104,18 +106,23 @@ public class AuthenticationService {
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        String username = request.username().trim();
+        String loginIdentifier = request.username().trim();
+        String normalizedEmail =
+                loginIdentifier.toLowerCase(Locale.ROOT);
 
-        UserAccount user = userRepository.findByUsername(username)
+        UserAccount user = userRepository.findByUsernameOrEmail(
+                        loginIdentifier,
+                        normalizedEmail
+                )
                 .orElseThrow(() -> new BadCredentialsException(
-                        "Invalid username or password"
+                        "Invalid username/email or password"
                 ));
 
         if (!passwordEncoder.matches(
                 request.password(),
                 user.getPassword())) {
             throw new BadCredentialsException(
-                    "Invalid username or password"
+                    "Invalid username/email or password"
             );
         }
 
@@ -141,25 +148,69 @@ public class AuthenticationService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public CurrentUserResponse getCurrentUser(String username) {
+        UserAccount user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BadCredentialsException(
+                        "Authenticated user was not found"
+                ));
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new DisabledException(
+                    "User account is not active"
+            );
+        }
+
+        CompanyStatus companyStatus = null;
+
+        if (user.getRole().getRoleName() == RoleName.COMPANY) {
+            Company company = companyRepository
+                    .findByUserUserId(user.getUserId())
+                    .orElseThrow(() -> new DisabledException(
+                            "Company profile was not found"
+                    ));
+
+            if (company.getStatus() != CompanyStatus.APPROVED) {
+                throw new DisabledException(
+                        "Company account is not approved"
+                );
+            }
+
+            companyStatus = company.getStatus();
+        }
+
+        return new CurrentUserResponse(
+                user.getUserId(),
+                user.getUsername(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole().getRoleName(),
+                user.getStatus(),
+                companyStatus
+        );
+    }
+
     private void validateUserDuplicates(
             String username,
             String email,
             String phone) {
 
         if (userRepository.existsByUsername(username)) {
-            throw new IllegalArgumentException(
+            throw new DuplicateResourceException(
                     "Username is already registered"
             );
         }
 
         if (userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException(
+            throw new DuplicateResourceException(
                     "Email is already registered"
             );
         }
 
         if (phone != null && userRepository.existsByPhone(phone)) {
-            throw new IllegalArgumentException(
+            throw new DuplicateResourceException(
                     "Phone number is already registered"
             );
         }
@@ -180,14 +231,14 @@ public class AuthenticationService {
         );
 
         if (companyRepository.existsByCompanyName(companyName)) {
-            throw new IllegalArgumentException(
+            throw new DuplicateResourceException(
                     "Company name is already registered"
             );
         }
 
         if (companyRepository.existsByRegistrationNumber(
                 registrationNumber)) {
-            throw new IllegalArgumentException(
+            throw new DuplicateResourceException(
                     "Company registration number is already registered"
             );
         }
