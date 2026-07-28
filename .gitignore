@@ -2,3 +2,9 @@
 tmp/
 .env
 *.log
+.agents
+**/target/
+**/node_modules/
+**/dist/
+**/uploads/
+*.env.local
