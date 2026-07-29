@@ -9,11 +9,6 @@ import CompanyDashboard from "./pages/CompanyDashboard.jsx";
 import PackageList from "./pages/PackageList.jsx";
 import PackageDetails from "./pages/PackageDetails.jsx";
 import PackageManager from "./pages/PackageManager.jsx";
-import TripBooking from "./pages/TripBooking.jsx";
-import MyBooking from "./pages/MyBooking.jsx";
-import Wishlist from "./pages/Wishlist.jsx";
-import PaymentHistory from "./pages/PaymentHistory.jsx";
-import Feedback from "./pages/Feedback.jsx";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer.jsx";
 import ProtectedRoutes from "./components/ProtectedRoutes.jsx";
@@ -66,11 +61,6 @@ function App() {
             }
           />
 
-          <Route path="/booking" element={<ProtectedRoutes allowedRoles={["TOURIST"]}><TripBooking /></ProtectedRoutes>} />
-          <Route path="/my-booking" element={<ProtectedRoutes allowedRoles={["TOURIST"]}><MyBooking /></ProtectedRoutes>} />
-          <Route path="/wishlist" element={<ProtectedRoutes allowedRoles={["TOURIST"]}><Wishlist /></ProtectedRoutes>} />
-          <Route path="/payment-history" element={<ProtectedRoutes allowedRoles={["TOURIST"]}><PaymentHistory /></ProtectedRoutes>} />
-          <Route path="/feedback" element={<ProtectedRoutes allowedRoles={["TOURIST"]}><Feedback /></ProtectedRoutes>} />
           <Route path="*" element={<Home />} />
         </Routes>
       </div>
