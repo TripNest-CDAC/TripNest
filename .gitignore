@@ -1,0 +1,7 @@
+.idea/
+tmp/
+.env
+*.log
+.agents
+
+
