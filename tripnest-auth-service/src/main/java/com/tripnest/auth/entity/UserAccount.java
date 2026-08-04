@@ -50,6 +50,9 @@ public class UserAccount {
     @Column(name = "address", columnDefinition = "TEXT")
     private String address;
 
+    @Column(name = "profile_image_path", length = 255)
+    private String profileImagePath;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private UserStatus status = UserStatus.ACTIVE;
@@ -136,6 +139,9 @@ public class UserAccount {
     public void setAddress(String address) {
         this.address = address;
     }
+
+    public String getProfileImagePath() { return profileImagePath; }
+    public void setProfileImagePath(String profileImagePath) { this.profileImagePath = profileImagePath; }
 
     public UserStatus getStatus() {
         return status;

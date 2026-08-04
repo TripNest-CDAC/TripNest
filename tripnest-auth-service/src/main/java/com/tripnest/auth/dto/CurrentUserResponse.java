@@ -11,8 +11,13 @@ public record CurrentUserResponse(
         String lastName,
         String email,
         String phone,
+        String address,
+        String profileImagePath,
         RoleName role,
         UserStatus userStatus,
-        CompanyStatus companyStatus
+        CompanyStatus companyStatus,
+        String companyName,
+        String registrationNumber,
+        String companyAddress
 ) {
 }
