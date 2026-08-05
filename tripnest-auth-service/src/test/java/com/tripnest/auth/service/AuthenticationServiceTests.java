@@ -5,6 +5,7 @@ import com.tripnest.auth.dto.CurrentUserResponse;
 import com.tripnest.auth.dto.LoginRequest;
 import com.tripnest.auth.dto.RegisterRequest;
 import com.tripnest.auth.dto.RegisterResponse;
+import com.tripnest.auth.dto.UpdateProfileRequest;
 import com.tripnest.auth.entity.Company;
 import com.tripnest.auth.entity.CompanyStatus;
 import com.tripnest.auth.entity.Role;
@@ -223,6 +224,68 @@ class AuthenticationServiceTests {
         assertThat(response.role()).isEqualTo(RoleName.TOURIST);
         assertThat(response.userStatus()).isEqualTo(UserStatus.ACTIVE);
         assertThat(response.companyStatus()).isNull();
+    }
+
+    @Test
+    void updatesOnlyAllowedProfileFields() {
+        UserAccount user = user(RoleName.TOURIST, UserStatus.ACTIVE);
+        UpdateProfileRequest request = new UpdateProfileRequest(
+                "Updated",
+                "Traveller",
+                "9123456789",
+                "Mumbai",
+                null,
+                null
+        );
+
+        when(userRepository.findByUsername("tourist1"))
+                .thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        CurrentUserResponse response = authenticationService
+                .updateCurrentUser("tourist1", request);
+
+        assertThat(user.getFirstName()).isEqualTo("Updated");
+        assertThat(user.getLastName()).isEqualTo("Traveller");
+        assertThat(user.getPhone()).isEqualTo("9123456789");
+        assertThat(user.getAddress()).isEqualTo("Mumbai");
+        assertThat(response.username()).isEqualTo("tourist1");
+        assertThat(response.email()).isEqualTo("tourist@example.com");
+    }
+
+    @Test
+    void updatesApprovedCompanyProfileDetails() {
+        UserAccount user = user(RoleName.COMPANY, UserStatus.ACTIVE);
+        Company company = new Company();
+        company.setUser(user);
+        company.setCompanyName("Old Travels");
+        company.setRegistrationNumber("REG-101");
+        company.setCompanyAddress("Pune");
+        company.setStatus(CompanyStatus.APPROVED);
+
+        UpdateProfileRequest request = new UpdateProfileRequest(
+                "Company",
+                "Owner",
+                "9876543210",
+                "Pune",
+                "New Travels",
+                "Mumbai"
+        );
+
+        when(userRepository.findByUsername("company1"))
+                .thenReturn(Optional.of(user));
+        when(companyRepository.findByUserUserId(user.getUserId()))
+                .thenReturn(Optional.of(company));
+        when(companyRepository.save(company)).thenReturn(company);
+        when(userRepository.save(user)).thenReturn(user);
+
+        CurrentUserResponse response = authenticationService
+                .updateCurrentUser("company1", request);
+
+        assertThat(company.getCompanyName()).isEqualTo("New Travels");
+        assertThat(company.getCompanyAddress()).isEqualTo("Mumbai");
+        assertThat(response.registrationNumber()).isEqualTo("REG-101");
+        assertThat(response.companyName()).isEqualTo("New Travels");
     }
 
     private RegisterRequest touristRequest() {

@@ -28,6 +28,11 @@ public class CompanyAdminService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<CompanyAdminResponse> getAllCompanies() {
+        return companyRepository.findAllByOrderByCompanyIdAsc().stream().map(this::toResponse).toList();
+    }
+
     @Transactional
     public CompanyAdminResponse approveCompany(Integer companyId) {
         return updateStatus(companyId, CompanyStatus.APPROVED);

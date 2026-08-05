@@ -13,6 +13,8 @@ public interface CompanyRepository extends JpaRepository<Company, Integer> {
 
     List<Company> findAllByStatusOrderByCompanyIdAsc(CompanyStatus status);
 
+    List<Company> findAllByOrderByCompanyIdAsc();
+
     boolean existsByCompanyName(String companyName);
 
     boolean existsByRegistrationNumber(String registrationNumber);

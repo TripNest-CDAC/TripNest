@@ -5,6 +5,7 @@ import com.tripnest.auth.dto.CurrentUserResponse;
 import com.tripnest.auth.dto.LoginRequest;
 import com.tripnest.auth.dto.RegisterRequest;
 import com.tripnest.auth.dto.RegisterResponse;
+import com.tripnest.auth.dto.UpdateProfileRequest;
 import com.tripnest.auth.entity.Company;
 import com.tripnest.auth.entity.CompanyStatus;
 import com.tripnest.auth.entity.Role;
@@ -12,6 +13,7 @@ import com.tripnest.auth.entity.RoleName;
 import com.tripnest.auth.entity.UserAccount;
 import com.tripnest.auth.entity.UserStatus;
 import com.tripnest.auth.exception.DuplicateResourceException;
+import com.tripnest.auth.exception.ResourceNotFoundException;
 import com.tripnest.auth.repository.CompanyRepository;
 import com.tripnest.auth.repository.RoleRepository;
 import com.tripnest.auth.repository.UserAccountRepository;
@@ -156,27 +158,68 @@ public class AuthenticationService {
                 ));
 
         if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new DisabledException(
-                    "User account is not active"
+            throw new DisabledException("User account is not active");
+        }
+
+        if (user.getRole().getRoleName() == RoleName.COMPANY) {
+            validateCompanyApproval(user);
+        }
+
+        return toCurrentUserResponse(user);
+    }
+
+    @Transactional
+    public CurrentUserResponse updateCurrentUser(
+            String username,
+            UpdateProfileRequest request) {
+
+        UserAccount user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BadCredentialsException(
+                        "Authenticated user was not found"
+                ));
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new DisabledException("User account is not active");
+        }
+
+        if (user.getRole().getRoleName() == RoleName.COMPANY) {
+            validateCompanyApproval(user);
+            updateCompanyProfile(user, request);
+        }
+
+        String phone = normalizeOptional(request.phone());
+
+        if (phone != null
+                && !phone.equals(user.getPhone())
+                && userRepository.existsByPhone(phone)) {
+            throw new DuplicateResourceException(
+                    "Phone number is already registered"
             );
         }
 
-        CompanyStatus companyStatus = null;
+        user.setFirstName(request.firstName().trim());
+        user.setLastName(normalizeOptional(request.lastName()));
+        user.setPhone(phone);
+        user.setAddress(normalizeOptional(request.address()));
+
+        UserAccount savedUser = userRepository.save(user);
+        return toCurrentUserResponse(savedUser);
+    }
+
+    @Transactional
+    public CurrentUserResponse updateProfileImage(String username, String imagePath) {
+        UserAccount user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User was not found"));
+        user.setProfileImagePath(imagePath);
+        return toCurrentUserResponse(userRepository.save(user));
+    }
+
+    private CurrentUserResponse toCurrentUserResponse(UserAccount user) {
+        Company company = null;
 
         if (user.getRole().getRoleName() == RoleName.COMPANY) {
-            Company company = companyRepository
-                    .findByUserUserId(user.getUserId())
-                    .orElseThrow(() -> new DisabledException(
-                            "Company profile was not found"
-                    ));
-
-            if (company.getStatus() != CompanyStatus.APPROVED) {
-                throw new DisabledException(
-                        "Company account is not approved"
-                );
-            }
-
-            companyStatus = company.getStatus();
+            company = companyRepository.findByUserUserId(user.getUserId())
+                    .orElse(null);
         }
 
         return new CurrentUserResponse(
@@ -186,10 +229,43 @@ public class AuthenticationService {
                 user.getLastName(),
                 user.getEmail(),
                 user.getPhone(),
+                user.getAddress(),
+                user.getProfileImagePath(),
                 user.getRole().getRoleName(),
                 user.getStatus(),
-                companyStatus
+                company == null ? null : company.getStatus(),
+                company == null ? null : company.getCompanyName(),
+                company == null ? null : company.getRegistrationNumber(),
+                company == null ? null : company.getCompanyAddress()
         );
+    }
+
+    private void updateCompanyProfile(
+            UserAccount user,
+            UpdateProfileRequest request) {
+
+        Company company = companyRepository.findByUserUserId(user.getUserId())
+                .orElseThrow(() -> new DisabledException(
+                        "Company profile was not found"
+                ));
+
+        String companyName = requireText(
+                request.companyName(),
+                "Company name is required"
+        );
+
+        if (!companyName.equals(company.getCompanyName())
+                && companyRepository.existsByCompanyName(companyName)) {
+            throw new DuplicateResourceException(
+                    "Company name is already registered"
+            );
+        }
+
+        company.setCompanyName(companyName);
+        company.setCompanyAddress(
+                normalizeOptional(request.companyAddress())
+        );
+        companyRepository.save(company);
     }
 
     private void validateUserDuplicates(

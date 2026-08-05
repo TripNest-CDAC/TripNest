@@ -35,6 +35,11 @@ public class AdminCompanyController {
         );
     }
 
+    @GetMapping
+    public ResponseEntity<List<CompanyAdminResponse>> allCompanies() {
+        return ResponseEntity.ok(companyAdminService.getAllCompanies());
+    }
+
     @PatchMapping("/{companyId}/approve")
     @Operation(summary = "Approve a company")
     public ResponseEntity<CompanyAdminResponse> approveCompany(

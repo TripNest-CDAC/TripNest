@@ -17,6 +17,7 @@ import java.util.List;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(
@@ -44,6 +45,14 @@ class SecurityAuthorizationTests {
     @Test
     void currentUserRejectsAnonymousRequest() throws Exception {
         mockMvc.perform(get("/api/users/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void profileUpdateRejectsAnonymousRequest() throws Exception {
+        mockMvc.perform(put("/api/users/me")
+                        .contentType("application/json")
+                        .content("{\"firstName\":\"Test\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
