@@ -1,0 +1,8 @@
+com\tripnest\ai\controller\ChatController.class
+com\tripnest\ai\dto\ChatResponse.class
+com\tripnest\ai\TripnestAiServiceApplication.class
+com\tripnest\ai\config\AiConfig.class
+com\tripnest\ai\service\CatalogueContextService.class
+com\tripnest\ai\service\TripNestChatService.class
+com\tripnest\ai\service\CatalogueContextService$CatalogueTrip.class
+com\tripnest\ai\dto\ChatRequest.class
